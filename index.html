@@ -2,63 +2,115 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KPI Monitor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bunyodkor KPI</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; background-color: #f0f2f5; padding: 15px; margin: 0; }
-        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #0088cc; }
-        .name { font-size: 18px; font-weight: bold; color: #1c1e21; margin-bottom: 8px; display: block; }
-        .item { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; border-bottom: 1px dashed #eee; padding-bottom: 3px; }
-        .label { color: #606770; }
+        :root {
+            --tg-theme-bg-color: #f4f7f9;
+            --primary: #0088cc;
+            --success: #27ae60;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color);
+            margin: 0;
+            padding: 15px;
+            color: #333;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid #e0e6ed;
+        }
+        .name {
+            font-size: 19px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 12px;
+            display: block;
+            border-bottom: 2px solid #f0f4f8;
+            padding-bottom: 8px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        .label { color: #7f8c8d; }
         .value { font-weight: 600; color: #2c3e50; }
-        .total { background: #e7f3ff; padding: 8px; border-radius: 8px; margin-top: 10px; text-align: center; }
-        .total-val { color: #27ae60; font-size: 18px; font-weight: bold; }
-        .error { color: red; text-align: center; margin-top: 20px; }
+        .oylik-container {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        .oylik-label { font-size: 12px; color: #166534; text-transform: uppercase; letter-spacing: 0.5px; }
+        .oylik-summa { font-size: 22px; font-weight: 900; color: var(--success); }
+        .loader { text-align: center; margin-top: 50px; font-weight: bold; color: var(--primary); }
     </style>
 </head>
 <body>
-    <div id="app">Ma'lumotlar yuklanmoqda...</div>
+    <div id="loader" class="loader">Ma'lumotlar yuklanmoqda...</div>
+    <div id="app"></div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbyynY9BElbseZg8egbkXO0hxZLD00Xss4tfOA6B-V-sH6bbxs4YKU3jQwK5veHlyOFxdA/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbyA14L_LAWlH0rsZbF6vhYKh0_aJoJzZungzk3r1cTnjZ8g0T1a2WhuV9XSGLpVSFJwYw/exec";
 
-        async function load() {
+        async function loadKPI() {
             try {
                 const response = await fetch(API_URL);
                 const data = await response.json();
-                const app = document.getElementById('app');
+                const container = document.getElementById('app');
                 
-                if (data.length === 0) {
-                    app.innerHTML = "Jadvalda ma'lumot topilmadi.";
-                    return;
-                }
-
                 let html = "";
-                data.forEach(x => {
-                    // Raqamlarni formatlash funksiyasi
-                    const f = (val) => isNaN(val) ? val : Number(val).toLocaleString('uz-UZ');
-
+                data.forEach(item => {
+                    const fmt = (num) => Number(num).toLocaleString('uz-UZ');
+                    
                     html += `
                         <div class="card">
-                            <span class="name">👤 ${x.ism || 'Noma\'lum'}</span>
-                            <div class="item"><span class="label">Smena:</span> <span class="value">${x.smena || '-'}</span></div>
-                            <div class="item"><span class="label">Savdo:</span> <span class="value">${f(x.savdo)} so'm</span></div>
-                            <div class="item"><span class="label">KPI:</span> <span class="value">${f(x.kpi)}</span></div>
-                            <div class="total">
-                                <div style="font-size: 12px; color: #606770;">Kutilayotgan Oylik:</div>
-                                <div class="total-val">${f(x.oylik)} so'm</div>
+                            <span class="name">${item.ism}</span>
+                            <div class="info-row">
+                                <span class="label">Ish smenasi:</span>
+                                <span class="value">${item.smena}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">KPI ko'rsatkichi:</span>
+                                <span class="value">${fmt(item.kpi)}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Jami savdo:</span>
+                                <span class="value">${fmt(item.savdo)} so'm</span>
+                            </div>
+                            <div class="oylik-container">
+                                <div class="oylik-label">Kutilayotgan oylik</div>
+                                <div class="oylik-summa">${fmt(item.oylik)} so'm</div>
                             </div>
                         </div>
                     `;
                 });
-                app.innerHTML = html;
-            } catch (err) {
-                document.getElementById('app').innerHTML = `<div class="error">Xatolik: Ma'lumotni o'qib bo'lmadi.<br>${err}</div>`;
+                
+                container.innerHTML = html;
+                document.getElementById('loader').style.display = 'none';
+            } catch (error) {
+                document.getElementById('loader').innerHTML = "Xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring.";
             }
         }
-        load();
-        if(window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.expand();
+
+        loadKPI();
+        
+        // Telegram WebApp sozlamalari
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand(); // Ilovani to'liq ekranga yoyish
+        }
     </script>
 </body>
 </html>
