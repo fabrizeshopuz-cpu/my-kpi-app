@@ -2,63 +2,72 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bunyodkor KPI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KPI Monitor</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background-color: #f0f2f5; margin: 0; padding: 10px; }
-        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .name { font-size: 17px; font-weight: bold; color: #0088cc; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px; }
-        .row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; }
+        body { font-family: sans-serif; background-color: #f4f4f9; padding: 15px; margin: 0; color: #333; }
+        .card { background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 5px solid #0088cc; }
+        .name { font-size: 18px; font-weight: bold; color: #0088cc; margin-bottom: 10px; display: block; }
+        .row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; }
         .label { color: #666; }
-        .val { font-weight: 600; color: #333; }
-        .oylik-box { background: #e8f5e9; border-radius: 8px; padding: 10px; margin-top: 10px; text-align: center; border: 1px solid #c8e6c9; }
-        .oylik-summa { color: #2e7d32; font-size: 18px; font-weight: bold; }
-        .loader { text-align: center; margin-top: 50px; color: #0088cc; }
+        .val { font-weight: bold; }
+        .oylik-box { background: #e8f5e9; padding: 12px; border-radius: 8px; margin-top: 10px; text-align: center; }
+        .oylik-val { color: #2e7d32; font-size: 20px; font-weight: bold; display: block; }
+        .error-msg { color: red; background: #ffdada; padding: 10px; border-radius: 8px; font-size: 12px; }
     </style>
 </head>
 <body>
-    <div id="loader" class="loader">Ma'lumotlar yuklanmoqda...</div>
-    <div id="app"></div>
+    <div id="app"><p style="text-align:center;">Ma'lumotlar yuklanmoqda...</p></div>
 
     <script>
-        // SIZNING YANGI LINKINGIZ
+        // BACKEND LINKINGIZ
         const API_URL = "https://script.google.com/macros/s/AKfycbz2Uan0Cl76AJmcwDmQsdo2687c4OLwLb5LC_M4TOO7G28fQ8pywLsteJrEbtdviMlA9g/exec";
 
         async function loadData() {
             try {
-                const res = await fetch(API_URL);
-                const data = await res.json();
+                const response = await fetch(API_URL);
+                const data = await response.json();
                 const container = document.getElementById('app');
                 
+                if (!data || data.length === 0) {
+                    container.innerHTML = "<p>Ma'lumot topilmadi.</p>";
+                    return;
+                }
+
                 let html = "";
                 data.forEach(item => {
-                    // Raqamlarni formatlash: 1000000 -> 1 000 000
-                    const fmt = (n) => Number(n).toLocaleString('uz-UZ').replace(/,/g, ' ');
-                    
+                    // Raqamlarni formatlash (1 000 000 so'm)
+                    const f = (n) => Number(n).toLocaleString('uz-UZ').replace(/,/g, ' ');
+
                     html += `
                         <div class="card">
-                            <div class="name">👤 ${item.ism}</div>
-                            <div class="row"><span class="label">Smena:</span> <span class="val">${item.smena}</span></div>
-                            <div class="row"><span class="label">KPI:</span> <span class="val">${fmt(item.kpi)}</span></div>
-                            <div class="row"><span class="label">Jami savdo:</span> <span class="val">${fmt(item.savdo)} so'm</span></div>
+                            <span class="name">👤 ${item.ism || 'Noma\'lum'}</span>
+                            <div class="row"><span class="label">Smena:</span> <span class="val">${item.smena || '-'}</span></div>
+                            <div class="row"><span class="label">KPI:</span> <span class="val">${f(item.kpi)}</span></div>
+                            <div class="row"><span class="label">Jami savdo:</span> <span class="val">${f(item.savdo)} so'm</span></div>
                             <div class="oylik-box">
-                                <div style="font-size: 12px; color: #444;">Kutilayotgan oylik:</div>
-                                <div class="oylik-summa">${fmt(item.oylik)} so'm</div>
+                                <span style="font-size:12px; color:#555;">Kutilayotgan oylik:</span>
+                                <span class="oylik-val">${f(item.oylik)} so'm</span>
                             </div>
                         </div>
                     `;
                 });
-                
                 container.innerHTML = html;
-                document.getElementById('loader').style.display = 'none';
-            } catch (e) {
-                document.getElementById('loader').innerHTML = "Xatolik yuz berdi. Internetni tekshiring.";
+            } catch (err) {
+                document.getElementById('app').innerHTML = `
+                    <div class="error-msg">
+                        <strong>Xatolik yuz berdi!</strong><br>
+                        Sababi: ${err.message}<br><br>
+                        Linkni tekshiring: <a href="${API_URL}" target="_blank">API LINK</a>
+                    </div>
+                `;
             }
         }
 
         loadData();
-        if(window.Telegram && window.Telegram.WebApp) {
+        
+        if (window.Telegram && window.Telegram.WebApp) {
             window.Telegram.WebApp.ready();
             window.Telegram.WebApp.expand();
         }
