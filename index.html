@@ -3,130 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bunyodkor KPI</title>
+    <title>KPI Monitor</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f8f9fa;
-            margin: 0;
-            padding: 15px;
-            color: #333;
-        }
-        .header {
-            background: linear-gradient(135deg, #0088cc, #005588);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .header h1 { margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
-        
-        .card {
-            background: white;
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            border: 1px solid #eee;
-        }
-        .worker-name {
-            font-size: 18px;
-            font-weight: bold;
-            color: #0088cc;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-        }
-        .worker-name::before { content: "👤"; margin-right: 8px; }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .stat-item {
-            background: #f1f4f7;
-            padding: 10px;
-            border-radius: 10px;
-            text-align: center;
-        }
-        .stat-label { font-size: 11px; color: #777; text-transform: uppercase; margin-bottom: 5px; }
-        .stat-value { font-size: 14px; font-weight: bold; color: #2c3e50; }
-        
-        .oylik-box {
-            grid-column: span 2;
-            background: #ebf9f1;
-            border: 1px dashed #27ae60;
-            padding: 12px;
-            margin-top: 5px;
-        }
-        .oylik-box .stat-value { color: #27ae60; font-size: 18px; }
-
-        .loader { text-align: center; padding: 50px; color: #0088cc; font-weight: bold; }
+        body { font-family: sans-serif; background-color: #f0f2f5; padding: 15px; margin: 0; }
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #0088cc; }
+        .name { font-size: 18px; font-weight: bold; color: #1c1e21; margin-bottom: 8px; display: block; }
+        .item { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; border-bottom: 1px dashed #eee; padding-bottom: 3px; }
+        .label { color: #606770; }
+        .value { font-weight: 600; color: #2c3e50; }
+        .total { background: #e7f3ff; padding: 8px; border-radius: 8px; margin-top: 10px; text-align: center; }
+        .total-val { color: #27ae60; font-size: 18px; font-weight: bold; }
+        .error { color: red; text-align: center; margin-top: 20px; }
     </style>
 </head>
 <body>
+    <div id="app">Ma'lumotlar yuklanmoqda...</div>
 
-<div class="header">
-    <h1>BUNYODKOR KPI</h1>
-</div>
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycby6kURYMOfnidSvygW4rzoJdQqqvOMJ-E_BRVWYbLt04HeKyWWAqNQHAYvVvLAdCLbzbw/exec";
 
-<div id="loader" class="loader">Ma'lumotlar yangilanmoqda...</div>
-<div id="app"></div>
+        async function load() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                const app = document.getElementById('app');
+                
+                if (data.length === 0) {
+                    app.innerHTML = "Jadvalda ma'lumot topilmadi.";
+                    return;
+                }
 
-<script>
-    const API_URL = "https://script.google.com/macros/s/AKfycby6kURYMOfnidSvygW4rzoJdQqqvOMJ-E_BRVWYbLt04HeKyWWAqNQHAYvVvLAdCLbzbw/exec";
+                let html = "";
+                data.forEach(x => {
+                    // Raqamlarni formatlash funksiyasi
+                    const f = (val) => isNaN(val) ? val : Number(val).toLocaleString('uz-UZ');
 
-    async function fetchData() {
-        try {
-            const response = await fetch(API_URL);
-            const data = await response.json();
-            const container = document.getElementById('app');
-            const loader = document.getElementById('loader');
-            
-            let html = '';
-            data.forEach(item => {
-                const num = (v) => Number(v).toLocaleString('uz-UZ');
-                html += `
-                    <div class="card">
-                        <div class="worker-name">${item.ism}</div>
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <div class="stat-label">Smena</div>
-                                <div class="stat-value">${item.smena}</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">KPI</div>
-                                <div class="stat-value">${num(item.kpi)}</div>
-                            </div>
-                            <div class="stat-item" style="grid-column: span 2; background: #fff9f0; border: 1px solid #ffeaa7;">
-                                <div class="stat-label">Jami Savdo</div>
-                                <div class="stat-value" style="color: #d35400;">${num(item.savdo)} so'm</div>
-                            </div>
-                            <div class="stat-item oylik-box">
-                                <div class="stat-label">Kutilayotgan Oylik</div>
-                                <div class="stat-value">${num(item.oylik)} so'm</div>
+                    html += `
+                        <div class="card">
+                            <span class="name">👤 ${x.ism || 'Noma\'lum'}</span>
+                            <div class="item"><span class="label">Smena:</span> <span class="value">${x.smena || '-'}</span></div>
+                            <div class="item"><span class="label">Savdo:</span> <span class="value">${f(x.savdo)} so'm</span></div>
+                            <div class="item"><span class="label">KPI:</span> <span class="value">${f(x.kpi)}</span></div>
+                            <div class="total">
+                                <div style="font-size: 12px; color: #606770;">Kutilayotgan Oylik:</div>
+                                <div class="total-val">${f(x.oylik)} so'm</div>
                             </div>
                         </div>
-                    </div>
-                `;
-            });
-            
-            container.innerHTML = html;
-            loader.style.display = 'none';
-        } catch (e) {
-            document.getElementById('loader').innerText = "Xatolik yuz berdi! Linkni tekshiring.";
+                    `;
+                });
+                app.innerHTML = html;
+            } catch (err) {
+                document.getElementById('app').innerHTML = `<div class="error">Xatolik: Ma'lumotni o'qib bo'lmadi.<br>${err}</div>`;
+            }
         }
-    }
-
-    fetchData();
-    if (window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
-    }
-</script>
+        load();
+        if(window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.expand();
+    </script>
 </body>
 </html>
