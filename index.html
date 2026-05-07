@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KPI Monitoring</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 10px; }
+        .container { max-width: 500px; margin: auto; }
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 5px solid #3498db; }
+        .name { font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 5px; }
+        .info { display: flex; justify-content: space-between; font-size: 14px; color: #7f8c8d; margin: 3px 0; }
+        .highlight { color: #27ae60; font-weight: bold; font-size: 16px; }
+        .header { text-align: center; padding: 10px; color: #2c3e50; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">SOTUVCHILAR KPI</div>
+        <div id="loader" style="text-align: center;">Ma'lumot yuklanmoqda...</div>
+        <div id="app"></div>
+    </div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycby6kURYMOfnidSvygW4rzoJdQqqvOMJ-E_BRVWYbLt04HeKyWWAqNQHAYvVvLAdCLbzbw/exec";
+
+        async function loadData() {
+            try {
+                const res = await fetch(API_URL);
+                const data = await res.json();
+                const app = document.getElementById('app');
+                const loader = document.getElementById('loader');
+                
+                let html = "";
+                data.forEach(item => {
+                    html += `
+                        <div class="card">
+                            <div class="name">${item.ism}</div>
+                            <div class="info"><span>Smena:</span> <span>${item.smena}</span></div>
+                            <div class="info"><span>Savdo:</span> <span class="highlight">${Number(item.savdo).toLocaleString()} so'm</span></div>
+                            <div class="info"><span>KPI:</span> <span>${Number(item.kpi).toLocaleString()}</span></div>
+                            <div class="info"><span>Jami oylik:</span> <b style="color:#e67e22">${Number(item.oylik).toLocaleString()} so'm</b></div>
+                        </div>
+                    `;
+                });
+                app.innerHTML = html;
+                loader.style.display = 'none';
+            } catch (error) {
+                document.getElementById('loader').innerHTML = "Xatolik yuz berdi!";
+            }
+        }
+        loadData();
+        window.Telegram.WebApp.ready();
+    </script>
+</body>
+</html>
